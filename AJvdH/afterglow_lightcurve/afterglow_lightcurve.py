@@ -126,17 +126,21 @@ fluxes[spec2segmentHcond] = eqn.F12(epsilonB, epsilonE, n0, E, D_L, z, t_sec[spe
 
 fluxes = np.copy(fluxes)*1e29
 # Load in boxfit lightcurve for comparison 
-boxfitdata = np.loadtxt('boxfitlightcurve.txt', delimiter=',',dtype={'names': ('i', 't', 'nu', 'F'), 'formats': (int, float, float, float)})
+# boxfitdata = np.loadtxt('boxfitlightcurve.txt', delimiter=',',dtype={'names': ('i', 't', 'nu', 'F'), 'formats': (int, float, float, float)})
 
 print('Tdays, nu, nua2, nua3, num, rgn, flux')
 # for i in range(len(t_days)):
 #     print("{:e}".format(t_days[i]), "{:e}".format(nu), "{:e}".format(nua2_arr[i]), "{:e}".format(nua3_arr[i]),  "{:e}".format(num_arr[i]),  rgnattime[i], fluxes[i], sep=',')
 
 fig = plt.figure
-plt.scatter(t_days, fluxes, marker='.',s=0.1, label='G&S2002', color='black')
+plt.scatter(t_days, fluxes, marker='.',s=0.1, color='black')
 # plt.scatter(boxfitdata['t']/3600/24, boxfitdata['F'], marker='*',  label='boxfit', color='darkorange')
 wherefluxmax = np.argmax(fluxes)
 print('Fmax: ',fluxes[wherefluxmax],' at t: ',t_days[wherefluxmax],' days')
+
+t1ind = np.array([round(t,1)==1 for t in t_days])
+
+print('F: ',fluxes[t1ind],' at t: 1 days')
 for myt in [0.3,2.2,4.2,8.3]:
     print('obsdate: ',myt)
     print(fluxes[np.round(t_days,decimals=1)==myt])
