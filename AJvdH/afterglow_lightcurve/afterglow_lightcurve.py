@@ -16,7 +16,7 @@ z = float(params['PARAMETERS']['z'])
 epsilonB = float(params['PARAMETERS']['epsilon_B'])
 epsilonE = float(params['PARAMETERS']['epsilon_e'])
 n0 = float(params['PARAMETERS']['n0'])
-E_gamma52 = float(params['PARAMETERS']['E_gamma52'])
+E_gamma53 = float(params['PARAMETERS']['E_gamma53'])
 epsilon_gamma = float(params['PARAMETERS']['epsilon_gamma'])
 t_days_min = float(params['PARAMETERS']['t_days_min'])
 t_days_max = float(params['PARAMETERS']['t_days_max'])
@@ -24,7 +24,7 @@ d_L28 = float(params['PARAMETERS']['d_L28'])
 nu = float(params['PARAMETERS']['nu'])
 nu_14 = nu/1e14
 
-E_52 = E_gamma52*((1/epsilon_gamma) - 1)
+E_53 = E_gamma53*((1/epsilon_gamma) - 1)
 # Computation params
 res = int(float(params['PARAMETERS']['res']))
 t_days = np.geomspace(t_days_min, t_days_max, num=res)
@@ -32,7 +32,7 @@ t_days = np.geomspace(t_days_min, t_days_max, num=res)
 
 t_sec = t_days*3600*24
 D_L = d_L28*1e28
-E = E_52*1e52
+E = E_53*1e53
 
 # print('F_nuMax: ',eqn.F_nuMax(epsilonB,n0,E,D_L,z)*1e29,'uJy')
 
