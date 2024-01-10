@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import datetime 
 import sys
 sys.path.append('../')
-import equations as eqn 
+import vdH_equations as eqn 
 import os 
 import imageio 
 from tqdm import tqdm
@@ -18,134 +18,87 @@ params = configparser.ConfigParser()
 params.read('parameters.config')
 
 def maincalc(t_days, isQuiet):
-    nu_sa1_val = eqn.nu_sa1(p, z, epsilon_e, epsilon_B, n0, E_52)
-    nu_m2_val = eqn.nu_m2(p, z, epsilon_e, epsilon_B, E_52, t_days)
-    nu_c3_val = eqn.nu_c3(p, z, epsilon_B, n0, E_52, t_days)
-    nu_m4_val = eqn.nu_m4(p, z, epsilon_e, epsilon_B, E_52, t_days)
-    nu_sa5_val = eqn.nu_sa5(p, z, epsilon_e, epsilon_B, n0, E_52, t_days)
-    nu_sa6_val = eqn.nu_sa6(p, z, epsilon_e, epsilon_B, n0, E_52, t_days)
-    nu_ac7_val = eqn.nu_ac7(p, z, epsilon_e, epsilon_B, n0, E_52, t_days)
-    nu_sa8_val = eqn.nu_sa8(z, n0, E_52, t_days)
-    nu_m9_val = eqn.nu_m9(p, z, epsilon_e, epsilon_B, E_52, t_days)
-    nu_sa10_val = eqn.nu_sa10(z, epsilon_B, n0, E_52, t_days)
-    nu_c11_val = eqn.nu_c11(z, epsilon_B, n0, E_52, t_days)
-    if not isQuiet:
-        print(nu_sa5_val)
-        print(nu_m4_val)
-    spectrum5_cond = (nu_ac7_val < nu_sa10_val) & (nu_sa10_val < nu_c11_val) & (nu_c11_val < nu_m9_val)
-    spectrum5_cond_arr = np.full(nu.shape, spectrum5_cond)
-    if not isQuiet:
-        print("-------------------------")
-        print("SPECTRUM 5")
-        print(spectrum5_cond)
+    nuc_val = eqn.nuc(epsilonB, n0, E, D_L, z, t_sec)
+    num_val = eqn.num(epsilonB, epsilonE, n0, E, D_L, z, t_sec, p) 
+    nua1_val = eqn.nua1(epsilonB, epsilonE, n0, E, D_L, z, t_sec, p)
+    nua2_val = eqn.nua2(epsilonB, epsilonE, n0, E, D_L, z, t_sec)
+    nua3_val = eqn.nua3(epsilonB, epsilonE, n0, E, D_L, z, t_sec, p)
+    spectrum5_indices = (nua2_val < nuc_val) & (nuc_val < num_val)
     
+    spectrum1_indices = (nua1_val < num_val) & (num_val < nuc_val) 
     
-    spectrum1_cond = (nu_sa1_val < nu_m2_val) & (nu_m2_val < nu_c3_val) 
-    spectrum1_cond_arr = np.full(nu.shape, spectrum1_cond)
-    if not isQuiet:
-        print("------------------------")
-        print("SPECTRUM 1")
-        print(spectrum1_cond)
+    spectrum2_indices = (num_val < nua3_val) & (nua3_val < nuc_val)
     
-    # spectrum2_cond = (nu_m4_val < nu_sa5_val) & (nu_sa5_val < nu_c3_val)
-    spectrum2_cond =  (nu_sa5_val < nu_c3_val)
-    spectrum2_cond_arr = np.full(nu.shape, spectrum2_cond)
-    # spectrum2_cond = ~np.zeros(spectrum5_cond.shape, dtype=bool)
-    # spectrum1_cond= np.zeros(spectrum5_cond.shape, dtype=bool)
-    if not isQuiet:
-        print("------------------------")
-        print("SPECTRUM 2")
-        print(spectrum2_cond)
-        print((nu_m4_val < nu_sa5_val), (nu_sa5_val < nu_c3_val))
-    spec5segmentBcond = (nu < nu_ac7_val) & spectrum5_cond_arr
-    spec5segmentCcond = (nu > nu_ac7_val) & (nu < nu_sa10_val) & spectrum5_cond_arr
-    spec5segmentEcond = (nu > nu_sa10_val) & (nu < nu_c11_val) & spectrum5_cond_arr
-    spec5segmentFcond = (nu > nu_c11_val) & (nu < nu_m9_val) & spectrum5_cond_arr
-    # spec5segmentFcond = (nu > nu_c11_val)  & spectrum5_cond_arr
-    spec5segmentHcond = (nu > nu_m9_val) & spectrum5_cond_arr
+    # spectrum2_indices = ~np.zeros(spectrum5_indices.shape, dtype=bool)
+    # spectrum1_indices= np.zeros(spectrum5_indices.shape, dtype=bool)
+    spec5segmentCcond = (nu < nua2_val) & spectrum5_indices
+    spec5segmentEcond = (nu > nua2_val) & (nu < nuc_val) & spectrum5_indices
+    spec5segmentFcond = (nu > nuc_val) & (nu < num_val) & spectrum5_indices
+    spec5segmentHcond = (nu > num_val) & spectrum5_indices
     
-    # print(spec5segmentBcond)
-    # input("presskey")
-    # print(spec5segmentCcond)
-    # input("presskey")
-    # print(spec5segmentEcond)
-    # input("presskey")
-    # print(spec5segmentFcond)
-    # input("presskey")
-    # print(spec5segmentHcond)
-    # input("presskey")
+    spec1segmentBcond = (nu < nua1_val) & spectrum1_indices
+    spec1segmentDcond = (nu > nua1_val) & (nu < num_val) & spectrum1_indices
+    spec1segmentGcond = (nu > num_val) & (nu < nuc_val) & spectrum1_indices
+    spec1segmentHcond = (nu > nuc_val) & spectrum1_indices
     
+    spec2segmentBcond = (nu < num_val) & spectrum2_indices
+    # spec2segmentAcond = (nu > nu_m4_val)  & spectrum2_indices
+    spec2segmentAcond = (nu > num_val) & (nu < nua3_val) & spectrum2_indices
+    # spec2segmentGcond = (nu > nu_c3_val) & spectrum2_indices
+    spec2segmentGcond = (nu > nua3_val) & (nu < nuc_val) & spectrum2_indices
+    spec2segmentHcond = (nu > nuc_val) & spectrum2_indices
     
-    spec1segmentBcond = (nu <  nu_sa1_val) & spectrum1_cond_arr
-    spec1segmentDcond = (nu > nu_sa1_val) & (nu < nu_m2_val) & spectrum1_cond_arr
-    spec1segmentGcond = (nu > nu_m2_val) & (nu < nu_c3_val) & spectrum1_cond_arr
-    spec1segmentHcond = (nu > nu_c3_val) & spectrum1_cond_arr
+    condlist = [spec5segmentCcond, spec5segmentEcond, spec5segmentFcond, spec5segmentHcond, spec1segmentBcond, spec1segmentDcond, spec1segmentGcond, spec1segmentHcond, spec2segmentBcond, spec2segmentAcond, spec2segmentGcond, spec2segmentHcond]
+    condnamelist = ['5C', '5E', '5F','5H', '1B', '1D', '1G', '1H' , '2B', '2A' ,'2G', '2H']
+    transitionNU = []
+    transitionName = []
+    for c in condlist:
+        if np.sum(c) != 0 :
+            leftregion = np.sort(np.where(c==True)[0])[-1]
+            print(leftregion)
+            transitionNU.append(nu[leftregion])
+    rgnatfreq = np.zeros(nu.shape, dtype='U2')
+    print(transitionNU)
+    for i in range(len(nu)):
+        for j in range(len(condlist)):
+            if condlist[j][i] == True:
+                rgnatfreq[i] = condnamelist[j]
+            else: 
+                pass
+    _, idx = np.unique(rgnatfreq[rgnatfreq != ''], return_index=True)
+    uniquergn = rgnatfreq[rgnatfreq != ''][np.sort(idx)]
+    print(uniquergn)
+    for i in range(0,len(uniquergn)-1):
+        transitionName.append(uniquergn[i]+"|"+uniquergn[i+1])
+    # for n,t in zip(nu_m4_arr, t_days):
+    #     print(t,'{:e}'.format(nu), '{:e}'.format(n))
     
-    
-    
-    spec2segmentBcond = (nu < nu_m4_val) & spectrum2_cond_arr
-    spec2segmentAcond = (nu > nu_m4_val) & (nu < nu_sa5_val) & spectrum2_cond_arr
-    spec2segmentGcond = (nu > nu_sa5_val) & (nu < nu_c3_val) & spectrum2_cond_arr
-    spec2segmentHcond = (nu > nu_c3_val) & spectrum2_cond_arr
-    
-    # print((nu > nu_m4_val) & ~(spec2segmentGcond))
-    # input("presskey")
-    # print((nu < nu_sa5_val) & ~(spec2segmentBcond))
-    # input('presskey')
-    # print(spec2segmentBcond)
-    # input("presskey")
-    # print(spec2segmentAcond)
-    # input('presskey')
-    # print(spec2segmentGcond)
-    # input('presskey')
-    # print(spec2segmentHcond)
-    # input('presskey')
     
     
     fluxes = np.zeros(nu.shape, dtype=float)
     
-    fluxes[spec5segmentBcond] = eqn.PLS_B(p, z, epsilon_e, n0, E_52, t_days, d_L28, nu_14[spec5segmentBcond] )
-    fluxes[spec5segmentCcond] = eqn.PLS_C(p, z, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec5segmentCcond] )
-    fluxes[spec5segmentEcond] = eqn.PLS_E(p, z, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec5segmentEcond] )
-    fluxes[spec5segmentFcond] = eqn.PLS_F(p, z, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec5segmentFcond] )
-    fluxes[spec5segmentHcond] = eqn.PLS_H(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec5segmentHcond] )
     
-    fluxes[spec1segmentBcond] = eqn.PLS_B(p, z, epsilon_e, n0, E_52, t_days, d_L28, nu_14[spec1segmentBcond] )
-    fluxes[spec1segmentDcond] = eqn.PLS_D(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec1segmentDcond] )
-    fluxes[spec1segmentGcond] = eqn.PLS_G(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec1segmentGcond] )
-    fluxes[spec1segmentHcond] = eqn.PLS_H(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec1segmentHcond] )
+    fluxes[spec5segmentCcond] = eqn.F1( epsilonB, epsilonE, n0, E, D_L, z, t_sec, nu[spec5segmentCcond])
+    fluxes[spec5segmentEcond] = eqn.F2( epsilonB, epsilonE, n0, E, D_L, z, t_sec, nu[spec5segmentEcond])
+    fluxes[spec5segmentFcond] = eqn.F3( epsilonB, n0, E, D_L, z, t_sec, nu[spec5segmentFcond])
+    fluxes[spec5segmentHcond] = eqn.F4(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec5segmentHcond])
     
-    fluxes[spec2segmentBcond] = eqn.PLS_B(p, z, epsilon_e, n0, E_52, t_days, d_L28, nu_14[spec2segmentBcond] )
-    fluxes[spec2segmentAcond] = eqn.PLS_A(p, z, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec2segmentAcond] )
-    fluxes[spec2segmentGcond] = eqn.PLS_G(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec2segmentGcond] )
-    fluxes[spec2segmentHcond] = eqn.PLS_H(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec2segmentHcond] )
+    fluxes[spec1segmentBcond] = eqn.F5(epsilonB, epsilonE, n0, E, D_L, z, t_sec, p, nu[spec1segmentBcond])
+    fluxes[spec1segmentDcond] = eqn.F6(epsilonB, epsilonE, n0, E, D_L, z, t_sec , p, nu[spec1segmentDcond])
+    fluxes[spec1segmentGcond] = eqn.F7(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec1segmentGcond])
+    fluxes[spec1segmentHcond] = eqn.F8(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec1segmentHcond])
     
-    # # Load in boxfit lightcurve for comparison 
-    # boxfitdata = np.loadtxt('boxfitlightcurve.txt', delimiter=',',dtype={'names': ('i', 't', 'nu', 'F'), 'formats': (int, float, float, float)})
+    fluxes[spec2segmentBcond] = eqn.F9(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec2segmentBcond])
+    fluxes[spec2segmentAcond] = eqn.F10(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec2segmentAcond])
+    fluxes[spec2segmentGcond] = eqn.F11(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec2segmentGcond])
+    fluxes[spec2segmentHcond] = eqn.F12(epsilonB, epsilonE, n0, E, D_L, z, t_sec ,p, nu[spec2segmentHcond])
+    
+    fluxes = np.copy(fluxes)*1e29
     
     
     fig = plt.figure
-    plt.scatter(nu, fluxes, marker='o', s=0.1, label='G&S2002')# , color='lightsteelblue')
+    plt.scatter(nu, fluxes, marker='o', s=0.1)# , color='lightsteelblue')
     
-    # obsdata = np.genfromtxt('../multiscatter/combinedimfitsummaries.csv', unpack=False, skip_header=2, delimiter = ',',
-    #             dtype={'names': ('grb','id', 'date','trigger','duration','fint', 'finterr',
-    #              'fpk','fpkerr', 'ra', 'dec','raerr','decerr',
-    #              'conmaj','conmin','conpa','conmajerr','conminerr',
-    #              'conpaerr','deconmaj','deconmin','deconpa','deconmajerr',
-    #              'decondeconminerr','deconpaerr','freq','rms'),
-    #               'formats': ('U32','U32','U32','U32','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8')})
-    
-    # datestrings = obsdata['date'][obsdata['grb'] == "GRB200219A"]
-    # durations = obsdata['duration'][obsdata['grb'] == "GRB200219A"]
-    # triggerdate = datetime.datetime.strptime(obsdata['trigger'][obsdata['grb'] == "GRB200219A"][0], "%Y-%m-%dT%H:%M:%S.%f")
-    # xdate = np.array([((datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S.%f")
-    #     - triggerdate).total_seconds()+(dur/2))/3600/24 for d,dur in zip(datestrings, durations)])
-    # # print(xdate, 3*obsdata['rms'][obsdata['grb'] == "GRB200219A"])
-    # plt.scatter(xdate, 1e3*3*obsdata['rms'][obsdata['grb'] == "GRB200219A"], marker='v', label='Obs UL', color='black')
     ax = plt.gca()
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -154,7 +107,7 @@ def maincalc(t_days, isQuiet):
     ax.set_ylim(1e-8, 1e5)
     # ax.set_ylim(np.amin(fluxes[fluxes!=0])*0.5, np.amax(fluxes)*1.5)
     ax.set_xlabel('nu (Hz)')
-    ax.set_ylabel('F (mJy)')
+    ax.set_ylabel('F (μJy)')
     plt.title('Spectrum at '+str(t_days)+' days')
     
     ax.legend()
@@ -174,21 +127,27 @@ def maincalc(t_days, isQuiet):
 # GRB PARAMS
 p = float(params['PARAMETERS']['p'])
 z = float(params['PARAMETERS']['z'])
-epsilon_B = float(params['PARAMETERS']['epsilon_B'])
-epsilon_e = float(params['PARAMETERS']['epsilon_e'])
+epsilonB = float(params['PARAMETERS']['epsilon_B'])
+epsilonE = float(params['PARAMETERS']['epsilon_e'])
 n0 = float(params['PARAMETERS']['n0'])
-E_52 = float(params['PARAMETERS']['E_52'])
+E_gamma53 = float(params['PARAMETERS']['E_gamma53'])
+epsilon_gamma = float(params['PARAMETERS']['epsilon_gamma'])
+t_days_min = float(params['PARAMETERS']['t_days_min'])
+t_days_max = float(params['PARAMETERS']['t_days_max'])
 t_days = float(params['PARAMETERS']['t_days'])
 d_L28 = float(params['PARAMETERS']['d_L28'])
 nu_min = float(params['PARAMETERS']['nu_min'])
 nu_max = float(params['PARAMETERS']['nu_max'])
-t_days_min = float(params['PARAMETERS']['t_days_min'])
-t_days_max = float(params['PARAMETERS']['t_days_max'])
+E_53 = E_gamma53*((1/epsilon_gamma) - 1)
+    
 
 # Computation params
 res = int(float(params['PARAMETERS']['res']))
 nu = np.geomspace(nu_min, nu_max, num=res)
 
+t_sec = t_days*3600*24
+D_L = d_L28*1e28
+E = E_53*1e53
 
 nu_14 = np.copy(nu)/1e14
 

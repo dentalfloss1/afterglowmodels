@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import datetime 
 import sys
 sys.path.append('../')
-import equations as eqn 
+import GS_equations as eqn
 import os 
 import imageio 
 from tqdm import tqdm
@@ -88,18 +88,6 @@ def maincalc(t_days, isQuiet):
     spec2segmentGcond = (nu > nu_sa5_val) & (nu < nu_c3_val) & spectrum2_cond_arr
     spec2segmentHcond = (nu > nu_c3_val) & spectrum2_cond_arr
     
-    # print((nu > nu_m4_val) & ~(spec2segmentGcond))
-    # input("presskey")
-    # print((nu < nu_sa5_val) & ~(spec2segmentBcond))
-    # input('presskey')
-    # print(spec2segmentBcond)
-    # input("presskey")
-    # print(spec2segmentAcond)
-    # input('presskey')
-    # print(spec2segmentGcond)
-    # input('presskey')
-    # print(spec2segmentHcond)
-    # input('presskey')
     
     
     fluxes = np.zeros(nu.shape, dtype=float)
@@ -120,41 +108,19 @@ def maincalc(t_days, isQuiet):
     fluxes[spec2segmentGcond] = eqn.PLS_G(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec2segmentGcond] )
     fluxes[spec2segmentHcond] = eqn.PLS_H(p, z, epsilon_e, epsilon_B, n0, E_52, t_days, d_L28, nu_14[spec2segmentHcond] )
     
-    # # Load in boxfit lightcurve for comparison 
-    # boxfitdata = np.loadtxt('boxfitlightcurve.txt', delimiter=',',dtype={'names': ('i', 't', 'nu', 'F'), 'formats': (int, float, float, float)})
     
+    fluxes = np.copy(fluxes)*1e3
     
     fig = plt.figure
     plt.scatter(nu, fluxes, marker='o', s=0.1, label='G&S2002')# , color='lightsteelblue')
     
-    # obsdata = np.genfromtxt('../multiscatter/combinedimfitsummaries.csv', unpack=False, skip_header=2, delimiter = ',',
-    #             dtype={'names': ('grb','id', 'date','trigger','duration','fint', 'finterr',
-    #              'fpk','fpkerr', 'ra', 'dec','raerr','decerr',
-    #              'conmaj','conmin','conpa','conmajerr','conminerr',
-    #              'conpaerr','deconmaj','deconmin','deconpa','deconmajerr',
-    #              'decondeconminerr','deconpaerr','freq','rms'),
-    #               'formats': ('U32','U32','U32','U32','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8','f8',
-    #               'f8','f8','f8','f8')})
-    
-    # datestrings = obsdata['date'][obsdata['grb'] == "GRB200219A"]
-    # durations = obsdata['duration'][obsdata['grb'] == "GRB200219A"]
-    # triggerdate = datetime.datetime.strptime(obsdata['trigger'][obsdata['grb'] == "GRB200219A"][0], "%Y-%m-%dT%H:%M:%S.%f")
-    # xdate = np.array([((datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S.%f")
-    #     - triggerdate).total_seconds()+(dur/2))/3600/24 for d,dur in zip(datestrings, durations)])
-    # # print(xdate, 3*obsdata['rms'][obsdata['grb'] == "GRB200219A"])
-    # plt.scatter(xdate, 1e3*3*obsdata['rms'][obsdata['grb'] == "GRB200219A"], marker='v', label='Obs UL', color='black')
     ax = plt.gca()
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlim(nu_min*0.5,nu_max*1.5)
-    # ax.set_xlim(nu_min*0.5,nu_max*1.5)
     ax.set_ylim(1e-8, 1e5)
-    # ax.set_ylim(np.amin(fluxes[fluxes!=0])*0.5, np.amax(fluxes)*1.5)
     ax.set_xlabel('nu (Hz)')
-    ax.set_ylabel('F (mJy)')
+    ax.set_ylabel('$F (μJy)$')
     plt.title('Spectrum at '+str(t_days)+' days')
     
     ax.legend()
@@ -167,8 +133,6 @@ def maincalc(t_days, isQuiet):
     
     
     
-    # PLOT SPECTRA AT GIVEN TIMES LOOK FOR MISSING SEGMENTS ? Maybe not?
-    # Why is nu_m not crossing nu_obs properly ?
 
 
 # GRB PARAMS
@@ -177,14 +141,16 @@ z = float(params['PARAMETERS']['z'])
 epsilon_B = float(params['PARAMETERS']['epsilon_B'])
 epsilon_e = float(params['PARAMETERS']['epsilon_e'])
 n0 = float(params['PARAMETERS']['n0'])
-E_52 = float(params['PARAMETERS']['E_52'])
+E_gamma53 = float(params['PARAMETERS']['E_gamma53'])
+epsilon_gamma = float(params['PARAMETERS']['epsilon_gamma'])
+t_days_min = float(params['PARAMETERS']['t_days_min'])
+t_days_max = float(params['PARAMETERS']['t_days_max'])
 t_days = float(params['PARAMETERS']['t_days'])
 d_L28 = float(params['PARAMETERS']['d_L28'])
 nu_min = float(params['PARAMETERS']['nu_min'])
 nu_max = float(params['PARAMETERS']['nu_max'])
-t_days_min = float(params['PARAMETERS']['t_days_min'])
-t_days_max = float(params['PARAMETERS']['t_days_max'])
-
+E_52 = E_gamma53*((1/epsilon_gamma) - 1)*1e-1
+    
 # Computation params
 res = int(float(params['PARAMETERS']['res']))
 nu = np.geomspace(nu_min, nu_max, num=res)
