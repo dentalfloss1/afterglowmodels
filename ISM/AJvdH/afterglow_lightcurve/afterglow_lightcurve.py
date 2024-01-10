@@ -140,7 +140,7 @@ plt.scatter(t_days, fluxes, marker='.',s=0.1, color='black')
 wherefluxmax = np.argmax(fluxes)
 print('Fmax: ',fluxes[wherefluxmax],' at t: ',t_days[wherefluxmax],' days')
 
-print('F_nuMax: ',np.amax(eqn.F_nuMax(epsilonB,n0,E,D_L,z,t_sec[wherefluxmax])*1e29),'uJy')
+print('F_nuMax: ',np.amax(eqn.F_nuMax(epsilonB,n0,E,D_L,z)*1e29),'uJy')
 # over90microJy = (fluxes > 90)
 # print("Over 90 microJy between ",t_days[over90microJy].min(), "and", t_days[over90microJy].max(),"days.")
 # print("Total days over 90 microJy: ",t_days[over90microJy].max()-t_days[over90microJy].min())
