@@ -34,7 +34,7 @@ t_sec = t_days*3600*24
 D_L = d_L28*1e28
 E = E_53*1e53
 
-# print('F_nuMax: ',eqn.F_nuMax(epsilonB,n0,E,D_L,z)*1e29,'uJy')
+# print('F_nuMax: ',np.amax(eqn.F_nuMax(epsilonB,n0,E,D_L,z,t_sec)*1e29),'uJy')
 
 nuc_arr = eqn.nuc(epsilonB, n0, E, D_L, z, t_sec)
 num_arr = eqn.num(epsilonB, epsilonE, n0, E, D_L, z, t_sec, p) 
@@ -139,6 +139,8 @@ plt.scatter(t_days, fluxes, marker='.',s=0.1, color='black')
 # plt.scatter(boxfitdata['t']/3600/24, boxfitdata['F'], marker='*',  label='boxfit', color='darkorange')
 wherefluxmax = np.argmax(fluxes)
 print('Fmax: ',fluxes[wherefluxmax],' at t: ',t_days[wherefluxmax],' days')
+
+print('F_nuMax: ',np.amax(eqn.F_nuMax(epsilonB,n0,E,D_L,z,t_sec[wherefluxmax])*1e29),'uJy')
 # over90microJy = (fluxes > 90)
 # print("Over 90 microJy between ",t_days[over90microJy].min(), "and", t_days[over90microJy].max(),"days.")
 # print("Total days over 90 microJy: ",t_days[over90microJy].max()-t_days[over90microJy].min())
